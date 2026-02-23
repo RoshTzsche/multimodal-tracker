@@ -1,146 +1,137 @@
-# Rosh Multimodal Tracker 🖐️🙂
+Claro que sí, Rosh. He preparado la traducción técnica de tu README al inglés, manteniendo el rigor matemático que prefieres y adaptando los términos al estándar de la industria de visión por computadora.
+Multimodal Tracker 🖐️🙂
 
-Un sistema de interacción multimodal avanzado basado en visión por computadora que combina el rastreo de manos (Hand Tracking) y el reconocimiento de expresiones faciales (Face Mesh) para activar eventos y superposiciones visuales en tiempo real.
+An advanced multimodal interaction system based on computer vision that combines Hand Tracking and Face Mesh recognition to trigger events and visual overlays in real-time.
 
-Este proyecto utiliza **MediaPipe** para la inferencia geométrica y **OpenCV** para el procesamiento de imágenes, diseñado para funcionar eficientemente en entornos Linux (específicamente optimizado para Fedora/Hyprland).
+This project utilizes MediaPipe for geometric inference and OpenCV for image processing, specifically optimized for Linux environments (Fedora/Hyprland).
+🚀 Key Features
 
-## 🚀 Características Principales
+    Simultaneous Multimodal Detection: Tracks hands and face concurrently without significant performance degradation.
 
-* **Detección Multimodal Simultánea:** Rastrea manos y rostro al mismo tiempo sin pérdida significativa de rendimiento.
-* **Sistema de "Combos":** Una arquitectura lógica que mapea pares de `(Gesto Mano, Expresión Facial)` a acciones específicas.
-    * *Ejemplo:* Un "Pulgar Arriba" con una "Sonrisa" genera un overlay diferente a un "Pulgar Arriba" con rostro "Neutral".
-* **Feedback Visual en Tiempo Real:** Superposición de imágenes (overlays) con soporte de transparencia (Canal Alpha/BGRA).
-* **Clasificación Geométrica Personalizada:** Algoritmos propios para determinar estados como "Sorpresa" o "Guiño" basados en distancias euclidianas y proporciones faciales.
+    "Combo" System: A logical architecture that maps pairs of (Hand Gesture, Facial Expression) to specific actions.
 
-## 🛠️ Requisitos del Sistema
+        Example: A "Thumbs Up" paired with a "Smile" generates a different overlay than a "Thumbs Up" with a "Neutral" face.
 
-* **Sistema Operativo:** Linux (Probado en Fedora 42 con Hyprland).
-* **Python:** Versión 3.8 a 3.11.
-    * *Nota importante:* El proyecto fue desarrollado y validado en **Python 3.11**. Versiones superiores (3.12+) presentan incompatibilidades con algunas dependencias (específicamente `mediapipe`/`distutils`) a fecha de Noviembre 2025.
-* **Hardware:** Webcam funcional.
+    Real-Time Visual Feedback: Image overlays with transparency support (Alpha Channel/BGRA).
 
-## 📦 Instalación
+    Custom Geometric Classification: Proprietary algorithms to determine states such as "Surprise" or "Wink" based on Euclidean distances and facial proportions.
 
-Sigue estos pasos para configurar el entorno desde cero:
+🛠️ System Requirements
 
-### 1. Clonar el Repositorio
-```bash
-git clone [https://github.com/tu-usuario/hand-tracker.git](https://github.com/tu-usuario/hand-tracker.git)
+    Operating System: Linux (Tested on Fedora 42 with Hyprland).
+
+    Python: Versions 3.8 to 3.11.
+
+        Important Note: The project was developed and validated on Python 3.11. Higher versions (3.12+) show incompatibilities with certain dependencies (specifically mediapipe/distutils) as of November 2025.
+
+    Hardware: Functional webcam.
+
+📦 Installation
+
+Follow these steps to set up the environment from scratch:
+1. Clone the Repository
+Bash
+
+git clone https://github.com/your-user/hand-tracker.git
 cd hand-tracker
-````
 
-### 2\. Crear Entorno Virtual (Recomendado)
+2. Create a Virtual Environment (Recommended)
 
-Para mantener las dependencias aisladas de tu sistema principal (Fedora):
+To keep dependencies isolated from your main system:
+Bash
 
-```bash
 python3 -m venv venv_gestos
 source venv_gestos/bin/activate
-```
 
-### 3\. Instalar Dependencias
+3. Install Dependencies
 
-Instala las librerías necesarias ejecutando:
+Install the required libraries by running:
+Bash
 
-```bash
 pip install opencv-python mediapipe numpy matplotlib
-```
 
-### 4\. ⚠️ Configuración de Recursos (CRÍTICO)
+4. ⚠️ Resource Configuration (CRITICAL)
 
-El sistema requiere una carpeta específica para los recursos gráficos que **no está incluida en el repositorio** por defecto. Debes crearla manualmente y añadir tus imágenes.
+The system requires a specific folder for graphic resources that is not included in the repository by default. You must create it manually and add your images.
 
-1.  Crea la carpeta `images` en la raíz del proyecto:
+    Create the images folder in the project root:
+    Bash
 
-    ```bash
     mkdir images
-    ```
 
-2.  Añade archivos `.png` dentro de esa carpeta. Para que el sistema funcione, los nombres de archivo deben coincidir con los definidos a continuación (o puedes modificar las rutas en `actions.py`). Asegúrate de tener las siguientes imágenes:
+    Add .png files inside that folder. For the system to function, the filenames must match those defined below (or you can modify the paths in actions.py). Ensure you have the following images:
 
-      * **Básicos:** `like.png`, `dislike.png`, `rock.png`, `peace.png`
-      * **Emociones:** `shocked.png`, `look_there.png`, `party.png`
-      * **Positividad:** `super_like.png`, `hello.png`, `happy_vibes.png`, `idea.png`
-      * **Guiños:** `secret.png`, `target_locked.png`, `bro_fist.png`, `high_five.png`
+        Basics: like.png, dislike.png, rock.png, peace.png
 
-> **Nota:** El sistema normalizará automáticamente las imágenes a formato BGRA y las redimensionará, pero es recomendable usar imágenes PNG con fondo transparente para un mejor efecto visual.
+        Emotions: shocked.png, look_there.png, party.png
 
-## 📐 Fundamentos Técnicos (Desglose Matemático)
+        Positivity: super_like.png, hello.png, happy_vibes.png, idea.png
 
-El núcleo de la clasificación no depende de redes neuronales de "caja negra" para la clasificación final, sino de **geometría analítica** aplicada sobre los *landmarks* extraídos por MediaPipe.
+        Winks: secret.png, target_locked.png, bro_fist.png, high_five.png
 
-### 1\. Clasificación de Manos (Lógica Vectorial)
+    Note: The system will automatically normalize the images to BGRA format and resize them, but it is recommended to use PNG images with transparent backgrounds for the best visual effect.
 
-Para determinar si un dedo está levantado, no usamos aprendizaje profundo, sino la comparación de distancias euclidianas cuadráticas ($d^2$) para evitar el costo computacional de las raíces cuadradas en cada frame.
+📐 Technical Foundations (Mathematical Breakdown)
 
-Sea $P_{wrist}$ la muñeca, $P_{tip}$ la punta del dedo y $P_{pip}$ la articulación intermedia:
-$$d^2(P_{wrist}, P_{tip}) > d^2(P_{wrist}, P_{pip}) \implies \text{Dedo Levantado}$$
+The classification core does not rely on "black box" neural networks for final classification, but rather on analytic geometry applied over the landmarks extracted by MediaPipe.
+1. Hand Classification (Vector Logic)
 
-### 2\. Detección de Sorpresa (MAR - Mouth Aspect Ratio)
+To determine if a finger is raised, we avoid the computational cost of square roots in every frame by comparing squared Euclidean distances (d2).
 
-Para detectar una boca abierta (sorpresa), calculamos la relación de aspecto de la boca utilizando la distancia euclidiana:
+Let Pwrist​ be the wrist, Ptip​ the fingertip, and Ppip​ the intermediate joint:
+d2(Pwrist​,Ptip​)>d2(Pwrist​,Ppip​)⟹Finger Raised
+2. Surprise Detection (MAR - Mouth Aspect Ratio)
 
-$$MAR = \frac{||P_{top} - P_{bottom}||}{||P_{left} - P_{right}||}$$
+To detect an open mouth (surprise), we calculate the mouth aspect ratio using the Euclidean distance:
+MAR=∣∣Pleft​−Pright​∣∣∣∣Ptop​−Pbottom​∣∣​
 
-Donde $|| \cdot ||$ es la norma euclidiana. Si $MAR > 0.45$, se clasifica como `SURPRISED`.
+Where ∣∣⋅∣∣ is the Euclidean norm. If MAR>0.45, it is classified as SURPRISED.
+3. Wink Detection (EAR - Eye Aspect Ratio)
 
-### 3\. Detección de Guiños (EAR - Eye Aspect Ratio)
+We use the standard EAR metric to determine eye openness. Six landmarks are considered per eye (p1​…p6​):
+EAR=2⋅∣∣p1​−p4​∣∣∣∣p2​−p6​∣∣+∣∣p3​−p5​∣∣​
 
-Utilizamos la métrica estándar EAR para determinar la apertura del ojo. Se consideran 6 puntos de referencia por ojo ($p_1 \dots p_6$):
+The system detects an intentional wink by comparing the EAR of both eyes:
+If (EARleft​<0.2∧EARright​>0.2)⟹WINK_LEFT
+🎮 Usage
 
-$$EAR = \frac{||p_2 - p_6|| + ||p_3 - p_5||}{2 \cdot ||p_1 - p_4||}$$
+To start the main tracking system:
+Bash
 
-El sistema detecta un guiño intencional comparando los EAR de ambos ojos:
-
-$$ \text{Si} (EAR_{left} < 0.2 \land EAR_{right} > 0.2) \implies \text{WINK\_LEFT}$$
-
-## 🎮 Uso
-
-Para iniciar el sistema principal de rastreo:
-
-```bash
 python tracker.py
-```
 
-### Controles
+Controls
 
-  * **ESC:** Cerrar la ventana y terminar el programa.
+    ESC: Close the window and terminate the program.
 
-## ⚙️ Configuración Avanzada
+⚙️ Advanced Configuration
+Camera Selection
 
-### Selección de Cámara
+The tracker.py file attempts to locate a specific camera by its hardware ID (/dev/v4l/by-id/...) to prevent issues on Linux systems with multiple video devices.
 
-El archivo `tracker.py` intenta localizar una cámara específica por su ID de hardware (`/dev/v4l/by-id/...`) para evitar problemas en sistemas con múltiples dispositivos de video en Linux.
+If your camera is not detected, edit the line in tracker.py:
+Python
 
-Si tu cámara no es detectada, edita la línea en `tracker.py`:
+# Change this to your camera index (usually 0 or 1)
+stable_path = "/path/to/your/camera" 
+# Or force the index directly in cv2.VideoCapture(0)
 
-```python
-# Cambia esto por el índice de tu cámara (generalmente 0 o 1)
-stable_path = "/ruta/a/tu/camara" 
-# O fuerza el índice directamente en cv2.VideoCapture(0)
-```
+📂 Project Structure
+Plaintext
 
-## 📂 Estructura del Proyecto
-
-```text
 hand-tracker/
-├── actions.py       # Controlador de lógica de combos y carga de imágenes
-├── tracker.py       # Punto de entrada principal (Loop de visión)
-├── images/          # [TÚ DEBES CREAR ESTO] Carpeta de recursos PNG
-├── .gitignore       # Configuración de exclusión de git
-└── README.md        # Documentación
-```
+├── actions.py       # Combo logic controller and image loading
+├── tracker.py       # Main entry point (Vision loop)
+├── images/          # [YOU MUST CREATE THIS] PNG resource folder
+├── .gitignore       # Git exclusion configuration
+└── README.md        # Documentation
 
-## 🤝 Contribución
+🤝 Contribution
 
-Si deseas agregar nuevos combos, edita el diccionario `self.combo_map` en `actions.py` y añade la imagen correspondiente en la carpeta `images/`.
+If you wish to add new combos, edit the self.combo_map dictionary in actions.py and add the corresponding image to the images/ folder.
+Python
 
-```python
-# Ejemplo de nuevo combo
+# Example of a new combo
 ("FIST", "SMILE"): "./images/power_up.png",
-```
 
------
-
-*Desarrollado por Rosh.*
-
+by Rosh.
