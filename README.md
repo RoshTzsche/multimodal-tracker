@@ -1,4 +1,3 @@
-Claro que sí, Rosh. He preparado la traducción técnica de tu README al inglés, manteniendo el rigor matemático que prefieres y adaptando los términos al estándar de la industria de visión por computadora.
 Multimodal Tracker 🖐️🙂
 
 An advanced multimodal interaction system based on computer vision that combines Hand Tracking and Face Mesh recognition to trigger events and visual overlays in real-time.
