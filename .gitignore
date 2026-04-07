@@ -1,3 +1,6 @@
 venv_gestos/
-__pycache__/
-images/
+__pycache_/ 
+lib/
+bin/
+include/
+lib64/

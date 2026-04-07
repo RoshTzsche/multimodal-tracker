@@ -1,136 +1,234 @@
-Multimodal Tracker 🖐️🙂
+# Multimodal Tracker
 
-An advanced multimodal interaction system based on computer vision that combines Hand Tracking and Face Mesh recognition to trigger events and visual overlays in real-time.
+A real-time computer vision system that combines **hand gesture recognition** and **facial expression detection** to trigger visual overlays. Built with MediaPipe Tasks API and OpenCV, runs on Linux, Windows, and macOS.
 
-This project utilizes MediaPipe for geometric inference and OpenCV for image processing, specifically optimized for Linux environments (Fedora/Hyprland).
-🚀 Key Features
+---
 
-    Simultaneous Multimodal Detection: Tracks hands and face concurrently without significant performance degradation.
+## How it works
 
-    "Combo" System: A logical architecture that maps pairs of (Hand Gesture, Facial Expression) to specific actions.
+Each video frame is processed by two independent MediaPipe models running in parallel:
 
-        Example: A "Thumbs Up" paired with a "Smile" generates a different overlay than a "Thumbs Up" with a "Neutral" face.
+1. **Hand Landmarker** — extracts 21 3D landmarks from the detected hand.
+2. **Face Landmarker** — extracts 468 3D landmarks from the detected face.
 
-    Real-Time Visual Feedback: Image overlays with transparency support (Alpha Channel/BGRA).
+Both outputs are fed into analytic geometry classifiers (no secondary neural network needed). When a registered **(Hand Gesture, Face Expression)** pair is matched, a PNG overlay is composited onto the frame in real-time.
 
-    Custom Geometric Classification: Proprietary algorithms to determine states such as "Surprise" or "Wink" based on Euclidean distances and facial proportions.
+```
+Webcam → Hand Landmarker ─→ classify_hand() ──┐
+       → Face Landmarker ─→ classify_face() ──┴→ Combo Map → Overlay
+```
 
-🛠️ System Requirements
+---
 
-    Operating System: Linux (Tested on Fedora 42 with Hyprland).
+## Recognized states
 
-    Python: Versions 3.8 to 3.11.
+**Hand gestures**
 
-        Important Note: The project was developed and validated on Python 3.11. Higher versions (3.12+) show incompatibilities with certain dependencies (specifically mediapipe/distutils) as of November 2025.
+| Label | Description |
+|---|---|
+| `THUMB_UP` | Thumb extended upward, all other fingers closed |
+| `THUMB_DOWN` | Thumb extended downward |
+| `FIST` | All fingers closed |
+| `OPEN_PALM` | 4 or more fingers extended |
+| `PEACE` | Index + middle finger up |
+| `POINT` | Only index finger up |
+| `UNKNOWN` | No matching pattern |
 
-    Hardware: Functional webcam.
+**Facial expressions**
 
-📦 Installation
+| Label | Description |
+|---|---|
+| `NEUTRAL` | Default resting face |
+| `SURPRISED` | Mouth open (MAR > 0.45) |
+| `SMILE` | Wide mouth, lips closed |
+| `WINK_LEFT` | Left eye closed, right eye open |
+| `WINK_RIGHT` | Right eye closed, left eye open |
 
-Follow these steps to set up the environment from scratch:
-1. Clone the Repository
-Bash
+---
 
-git clone https://github.com/your-user/hand-tracker.git
-cd hand-tracker
+## Combo map
 
-2. Create a Virtual Environment (Recommended)
+| Hand | Face | Overlay file |
+|---|---|---|
+| `THUMB_UP` | `NEUTRAL` | `like.png` |
+| `THUMB_DOWN` | `NEUTRAL` | `dislike.png` |
+| `FIST` | `NEUTRAL` | `rock.png` |
+| `PEACE` | `NEUTRAL` | `peace.png` |
+| `OPEN_PALM` | `SURPRISED` | `shocked.png` |
+| `POINT` | `SURPRISED` | `look_there.png` |
+| `PEACE` | `SURPRISED` | `party.png` |
+| `THUMB_UP` | `SMILE` | `super_like.png` |
+| `OPEN_PALM` | `SMILE` | `hello.png` |
+| `PEACE` | `SMILE` | `happy_vibes.png` |
+| `POINT` | `SMILE` | `idea.png` |
+| `POINT` | `WINK_LEFT` | `secret.png` |
+| `POINT` | `WINK_RIGHT` | `target_locked.png` |
+| `FIST` | `WINK_LEFT` | `bro_fist.png` |
+| `OPEN_PALM` | `WINK_RIGHT` | `high_five.png` |
 
-To keep dependencies isolated from your main system:
-Bash
+---
 
-python3 -m venv venv_gestos
-source venv_gestos/bin/activate
+## Requirements
 
-3. Install Dependencies
+- **OS:** Windows 10+, macOS 12+, or any modern Linux distro
+- **Python:** 3.8 – 3.11 *(MediaPipe does not yet support 3.12+)*
+- **Hardware:** Any functional USB or integrated webcam
 
-Install the required libraries by running:
-Bash
+---
 
-pip install opencv-python mediapipe numpy matplotlib
+## Installation
 
-4. ⚠️ Resource Configuration (CRITICAL)
+### 1 · Clone the repository
 
-The system requires a specific folder for graphic resources that is not included in the repository by default. You must create it manually and add your images.
+```bash
+git clone https://github.com/your-user/multimodal-tracker.git
+cd multimodal-tracker
+```
 
-    Create the images folder in the project root:
-    Bash
+### 2 · Create and activate a virtual environment
 
-    mkdir images
+**Linux / macOS**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
-    Add .png files inside that folder. For the system to function, the filenames must match those defined below (or you can modify the paths in actions.py). Ensure you have the following images:
+**Windows**
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
 
-        Basics: like.png, dislike.png, rock.png, peace.png
+### 3 · Install dependencies
 
-        Emotions: shocked.png, look_there.png, party.png
+```bash
+pip install opencv-python mediapipe numpy
+```
 
-        Positivity: super_like.png, hello.png, happy_vibes.png, idea.png
+### 4 · Create the images folder
 
-        Winks: secret.png, target_locked.png, bro_fist.png, high_five.png
+The repository does not ship overlay images. Create the folder and add your own PNGs:
 
-    Note: The system will automatically normalize the images to BGRA format and resize them, but it is recommended to use PNG images with transparent backgrounds for the best visual effect.
+```bash
+mkdir images
+```
 
-📐 Technical Foundations (Mathematical Breakdown)
+Place the following files inside `images/`. PNG files with transparent backgrounds (RGBA) work best, but solid JPEGs are also accepted — the system normalizes everything to BGRA automatically.
 
-The classification core does not rely on "black box" neural networks for final classification, but rather on analytic geometry applied over the landmarks extracted by MediaPipe.
-1. Hand Classification (Vector Logic)
+```
+images/
+├── like.png
+├── dislike.png
+├── rock.png
+├── peace.png
+├── shocked.png
+├── look_there.png
+├── party.png
+├── super_like.png
+├── hello.png
+├── happy_vibes.png
+├── idea.png
+├── secret.png
+├── target_locked.png
+├── bro_fist.png
+└── high_five.png
+```
 
-To determine if a finger is raised, we avoid the computational cost of square roots in every frame by comparing squared Euclidean distances (d2).
+> **Tip:** Any PNG works. Images are automatically resized to 200 px wide. Missing images are skipped silently — only their combo won't fire.
 
-Let Pwrist​ be the wrist, Ptip​ the fingertip, and Ppip​ the intermediate joint:
-d2(Pwrist​,Ptip​)>d2(Pwrist​,Ppip​)⟹Finger Raised
-2. Surprise Detection (MAR - Mouth Aspect Ratio)
+### 5 · Run
 
-To detect an open mouth (surprise), we calculate the mouth aspect ratio using the Euclidean distance:
-MAR=∣∣Pleft​−Pright​∣∣∣∣Ptop​−Pbottom​∣∣​
-
-Where ∣∣⋅∣∣ is the Euclidean norm. If MAR>0.45, it is classified as SURPRISED.
-3. Wink Detection (EAR - Eye Aspect Ratio)
-
-We use the standard EAR metric to determine eye openness. Six landmarks are considered per eye (p1​…p6​):
-EAR=2⋅∣∣p1​−p4​∣∣∣∣p2​−p6​∣∣+∣∣p3​−p5​∣∣​
-
-The system detects an intentional wink by comparing the EAR of both eyes:
-If (EARleft​<0.2∧EARright​>0.2)⟹WINK_LEFT
-🎮 Usage
-
-To start the main tracking system:
-Bash
-
+```bash
 python tracker.py
+```
 
-Controls
+MediaPipe model files (~40 MB total) are downloaded automatically on first run and cached in `./models/`.
 
-    ESC: Close the window and terminate the program.
+**Controls:** press `ESC` to exit.
 
-⚙️ Advanced Configuration
-Camera Selection
+---
 
-The tracker.py file attempts to locate a specific camera by its hardware ID (/dev/v4l/by-id/...) to prevent issues on Linux systems with multiple video devices.
+## Project structure
 
-If your camera is not detected, edit the line in tracker.py:
-Python
+```
+multimodal-tracker/
+├── tracker.py      # Main entry point — camera loop, detection, drawing
+├── actions.py      # Combo map, image loading and caching
+├── images/         # [create manually] PNG overlay assets
+├── models/         # [auto-created] MediaPipe .task model files
+├── .gitignore
+└── README.md
+```
 
-# Change this to your camera index (usually 0 or 1)
-stable_path = "/path/to/your/camera" 
-# Or force the index directly in cv2.VideoCapture(0)
+---
 
-📂 Project Structure
-Plaintext
+## Changing the active camera
 
-hand-tracker/
-├── actions.py       # Combo logic controller and image loading
-├── tracker.py       # Main entry point (Vision loop)
-├── images/          # [YOU MUST CREATE THIS] PNG resource folder
-├── .gitignore       # Git exclusion configuration
-└── README.md        # Documentation
+The system defaults to camera index `0`. If you have multiple cameras (e.g. a laptop webcam + external USB), change the index inside `tracker.py`:
 
-🤝 Contribution
+```python
+# tracker.py — inside the run() method
+cap = self._initialize_camera(camera_index=1)  # 0, 1, 2 …
+```
 
-If you wish to add new combos, edit the self.combo_map dictionary in actions.py and add the corresponding image to the images/ folder.
-Python
+On Linux you can also list available devices with:
+```bash
+ls /dev/video*
+v4l2-ctl --list-devices
+```
 
-# Example of a new combo
-("FIST", "SMILE"): "./images/power_up.png",
+---
 
-by Rosh.
+## Adding new combos
+
+1. Add your PNG file to `images/`.
+2. Open `actions.py` and add an entry to `self.combo_map`:
+
+```python
+("FIST", "SMILE"): os.path.join(self.images_dir, "power_up.png"),
+```
+
+3. That's it — no other code changes needed.
+
+---
+
+## Technical details
+
+### Finger extension (hand classification)
+
+Squared Euclidean distance is used to avoid `sqrt()` on every frame:
+
+```
+d²(wrist, tip) > d²(wrist, pip)  →  finger is extended
+```
+
+### Surprise detection — Mouth Aspect Ratio (MAR)
+
+```
+MAR = ||P_top - P_bot|| / ||P_left - P_right||
+
+MAR > 0.45  →  SURPRISED
+```
+
+### Wink detection — Eye Aspect Ratio (EAR)
+
+Six landmarks per eye (p1…p6):
+
+```
+EAR = (||p2-p6|| + ||p3-p5||) / (2 · ||p1-p4||)
+
+EAR_left < 0.2  AND  EAR_right > 0.2  →  WINK_LEFT
+EAR_right < 0.2 AND  EAR_left  > 0.2  →  WINK_RIGHT
+```
+
+### Alpha compositing
+
+Overlay pixels are blended using the PNG alpha channel:
+
+```
+output = α · overlay + (1 - α) · background
+```
+
+---
+
+*by Rosh.*

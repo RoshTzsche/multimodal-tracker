@@ -1,75 +1,89 @@
-import time
+################
+## RoshTzsche ##
+################
 import os
 import cv2
 
 class ActionController:
     def __init__(self):
-        # Mapeo de combinaciones: (Gesto Mano, Gesto Cara) -> Nombre de archivo
+        # Dynamically resolve the absolute path to the images directory
+        # so the script works regardless of where it is launched from
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.images_dir = os.path.join(base_dir, "images")
+
+        # Combo map: (Hand Gesture, Face Expression) -> PNG file path
+        # Add new entries here to extend the system with new combos
         self.combo_map = {
-            # --- Grupo 1: Básicos (Rostro Neutral) ---
-            ("THUMB_UP", "NEUTRAL"): "./images/like.png",
-            ("THUMB_DOWN", "NEUTRAL"): "./images/dislike.png",
-            ("FIST", "NEUTRAL"): "./images/rock.png",
-            ("PEACE", "NEUTRAL"): "./images/peace.png",
-            
-            # --- Grupo 2: Emociones (Sorpresa) ---
-            ("OPEN_PALM", "SURPRISED"): "./images/shocked.png",
-            ("POINT", "SURPRISED"): "./images/look_there.png",
-            ("PEACE", "SURPRISED"): "./images/party.png",
-            
-            # --- Grupo 3: Positividad (Sonrisa) ---
-            ("THUMB_UP", "SMILE"): "./images/super_like.png",
-            ("OPEN_PALM", "SMILE"): "./images/hello.png",
-            ("PEACE", "SMILE"): "./images/happy_vibes.png",
-            ("POINT", "SMILE"): "./images/idea.png",
-            
-            # --- Grupo 4: Guiños (Interacción coqueta/secreta) ---
-            ("POINT", "WINK_LEFT"): "./images/secret.png",
-            ("POINT", "WINK_RIGHT"): "./images/target_locked.png",
-            ("FIST", "WINK_LEFT"): "./images/bro_fist.png",
-            ("OPEN_PALM", "WINK_RIGHT"): "./images/high_five.png"
+            # --- Group 1: Basics (Neutral Face) ---
+            ("THUMB_UP",   "NEUTRAL"):   os.path.join(self.images_dir, "like.png"),
+            ("THUMB_DOWN", "NEUTRAL"):   os.path.join(self.images_dir, "dislike.png"),
+            ("FIST",       "NEUTRAL"):   os.path.join(self.images_dir, "rock.png"),
+            ("PEACE",      "NEUTRAL"):   os.path.join(self.images_dir, "peace.png"),
+
+            # --- Group 2: Surprise Combos ---
+            ("OPEN_PALM",  "SURPRISED"): os.path.join(self.images_dir, "shocked.png"),
+            ("POINT",      "SURPRISED"): os.path.join(self.images_dir, "look_there.png"),
+            ("PEACE",      "SURPRISED"): os.path.join(self.images_dir, "party.png"),
+
+            # --- Group 3: Positive / Smile Combos ---
+            ("THUMB_UP",   "SMILE"):     os.path.join(self.images_dir, "super_like.png"),
+            ("OPEN_PALM",  "SMILE"):     os.path.join(self.images_dir, "hello.png"),
+            ("PEACE",      "SMILE"):     os.path.join(self.images_dir, "happy_vibes.png"),
+            ("POINT",      "SMILE"):     os.path.join(self.images_dir, "idea.png"),
+
+            # --- Group 4: Wink / Secret Combos ---
+            ("POINT",      "WINK_LEFT"):  os.path.join(self.images_dir, "secret.png"),
+            ("POINT",      "WINK_RIGHT"): os.path.join(self.images_dir, "target_locked.png"),
+            ("FIST",       "WINK_LEFT"):  os.path.join(self.images_dir, "bro_fist.png"),
+            ("OPEN_PALM",  "WINK_RIGHT"): os.path.join(self.images_dir, "high_five.png"),
         }
-        
-        # Cache de imágenes cargadas para no leer disco en cada frame
+
+        # In-memory image cache — avoids reading from disk on every frame
         self.image_cache = {}
         self._load_images()
 
     def _load_images(self):
         """
-        Carga imágenes y normaliza su formato a BGRA (4 canales) 
-        para evitar errores de 'not enough values to unpack'.
+        Pre-loads all combo images and normalizes them to BGRA (4 channels).
+        This prevents 'not enough values to unpack' errors at runtime when
+        OpenCV reads a 3-channel PNG without an alpha channel.
         """
-        for key, filename in self.combo_map.items():
-            if os.path.exists(filename):
-                # 1. Cargar la imagen sin modificar flags (para detectar alpha si existe)
-                img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-                
-                if img is not None:
-                    # 2. Verificar canales
-                    # Si es RGB/BGR (3 canales), forzamos conversión a BGRA
-                    if len(img.shape) == 3 and img.shape[2] == 3:
-                        img = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
-                    
-                    # 3. Redimensionar para consistencia (opcional, pero recomendado)
-                    # Mantenemos un tamaño manejable (ej. 200px ancho)
-                    target_w = 200
-                    scale = target_w / img.shape[1]
-                    target_h = int(img.shape[0] * scale)
-                    img = cv2.resize(img, (target_w, target_h))
-                    
-                    self.image_cache[key] = img
-                    print(f"[Sistema] Imagen cargada: {filename} {img.shape}")
-                else:
-                    print(f"[Error] No se pudo leer la imagen: {filename}")
-            else:
-                pass 
-                # print(f"[Aviso] Falta imagen para combo: {key} -> {filename}")
+        if not os.path.exists(self.images_dir):
+            print(f"[Critical Error] Images folder not found at: {self.images_dir}")
+            print(f"[Critical Error] Please create it and add the required PNG files.")
+            return
 
+        for key, filepath in self.combo_map.items():
+            if not os.path.exists(filepath):
+                # Skip silently — missing images are non-fatal; the combo simply won't fire
+                continue
 
-    def get_overlay_image(self, hand_gesture, face_expression):
+            # Load with UNCHANGED flag to preserve alpha channel if present
+            img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+
+            if img is None:
+                print(f"[Warning] Could not load image: {filepath}")
+                continue
+
+            # Normalize to 4-channel BGRA so overlay logic always receives the same shape
+            if len(img.shape) == 3 and img.shape[2] == 3:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
+            elif len(img.shape) == 2:
+                # Grayscale image — convert to BGRA
+                img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGRA)
+
+            # Resize to a standard width of 200 px, preserving aspect ratio
+            target_w = 200
+            scale = target_w / img.shape[1]
+            target_h = int(img.shape[0] * scale)
+            img = cv2.resize(img, (target_w, target_h), interpolation=cv2.INTER_AREA)
+
+            self.image_cache[key] = img
+            print(f"[System] Loaded: {os.path.basename(filepath)}  shape={img.shape}")
+
+    def get_overlay_image(self, hand_gesture: str, face_expression: str):
         """
-        Devuelve la imagen (array numpy) correspondiente a la combinación,
-        o None si no hay match.
+        Returns the numpy image array for the given (hand, face) combo,
+        or None if the combination has no registered overlay.
         """
-        key = (hand_gesture, face_expression)
-        return self.image_cache.get(key, None)
+        return self.image_cache.get((hand_gesture, face_expression), None)
