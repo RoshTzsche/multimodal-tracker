@@ -17,7 +17,7 @@ Both outputs are fed into analytic geometry classifiers (no secondary neural net
 Webcam → Hand Landmarker ─→ classify_hand() ──┐
        → Face Landmarker ─→ classify_face() ──┴→ Combo Map → Overlay
 ```
-
+![Screenshot](./assets/asset.png)
 ---
 
 ## Recognized states
