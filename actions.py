@@ -16,24 +16,24 @@ class ActionController:
         self.combo_map = {
             # --- Group 1: Basics (Neutral Face) ---
             ("THUMB_UP",   "NEUTRAL"):   os.path.join(self.images_dir, "like.png"),
-            ("THUMB_DOWN", "NEUTRAL"):   os.path.join(self.images_dir, "dislike.png"),
-            ("FIST",       "NEUTRAL"):   os.path.join(self.images_dir, "rock.png"),
-            ("PEACE",      "NEUTRAL"):   os.path.join(self.images_dir, "peace.png"),
-
+            ("THUMB_DOWN", "NEUTRAL"):   os.path.join(self.images_dir, "dislike.jpg"),
+            ("FIST",       "NEUTRAL"):   os.path.join(self.images_dir, "bro_fist.png"),
+            ("PEACE",      "NEUTRAL"):   os.path.join(self.images_dir, "peace.jpg"),
+ ("FIST",   "SURPRISED"):   os.path.join(self.images_dir, "babyfist.png"),
             # --- Group 2: Surprise Combos ---
             ("OPEN_PALM",  "SURPRISED"): os.path.join(self.images_dir, "shocked.png"),
             ("POINT",      "SURPRISED"): os.path.join(self.images_dir, "look_there.png"),
             ("PEACE",      "SURPRISED"): os.path.join(self.images_dir, "party.png"),
 
             # --- Group 3: Positive / Smile Combos ---
-            ("THUMB_UP",   "SMILE"):     os.path.join(self.images_dir, "super_like.png"),
-            ("OPEN_PALM",  "SMILE"):     os.path.join(self.images_dir, "hello.png"),
-            ("PEACE",      "SMILE"):     os.path.join(self.images_dir, "happy_vibes.png"),
-            ("POINT",      "SMILE"):     os.path.join(self.images_dir, "idea.png"),
+            ("THUMB_UP",   "SMILE"):     os.path.join(self.images_dir, "like_mouth.jpg"),
+            ("OPEN_PALM",  "SMILE"):     os.path.join(self.images_dir, "palm_smile.png"),
+            ("PEACE",      "SMILE"):     os.path.join(self.images_dir, "peace_smile.png"),
+            ("POINT",      "SMILE"):     os.path.join(self.images_dir, "point_neutral.png"),
 
             # --- Group 4: Wink / Secret Combos ---
             ("POINT",      "WINK_LEFT"):  os.path.join(self.images_dir, "secret.png"),
-            ("POINT",      "WINK_RIGHT"): os.path.join(self.images_dir, "target_locked.png"),
+            ("POINT",      "WINK_RIGHT"): os.path.join(self.images_dir, ".png"),
             ("FIST",       "WINK_LEFT"):  os.path.join(self.images_dir, "bro_fist.png"),
             ("OPEN_PALM",  "WINK_RIGHT"): os.path.join(self.images_dir, "high_five.png"),
         }
